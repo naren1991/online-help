@@ -1,0 +1,159 @@
+---
+title: "How to arrange a data table by input column name in Shiny app?"
+author: "Naren Srinivasan"
+date: "27 November 2018"
+output: html_document
+---
+# The problem
+
+\link{https://stackoverflow.com/questions/53492388/how-to-arrange-a-data-table-by-input-column-name-in-shiny-app/53493003#53493003}
+
+I'm trying to code an app for my data visualization project due in a week, but I can't seem to get my app to give the output I want. The app is supposed to take 4 inputs (a person's education [this has no effect on the output] and three skills they posses), and arrange the given data table so that the resulting arranged table has the best matched occupations listed at the top in descending order.
+
+I have asked both my professor and TA for help, and my TA pointed me toward the arrange() function and desc(mydata[, input$firstskill]), but that only calls the first value in the related column, and not the actual column with that column name.
+
+Any help is appreciated. Thank you! My code is below.
+
+<Example not reproducible>
+# The solution
+
+Can you provide a reproducible example i.e. code we can run independently? For example, we don't have access to "Importance table.xlsx", and don't know what it looks like. Your code seems to indicate that the column names in `mydata` are each of the skills.
+
+In general, `arrange` and other dplyr verbs use tidy evaluation semantics. This means that while using a variable which contains the name of the column, we need to convert the string to a symbol and then use `!!` while evaluating. A simple example below.
+
+
+```{r}
+data(iris)
+library(magrittr)
+
+var1 <- "Species"
+var2 <- "Sepal.Length"
+var3 <- "Petal.Length"
+
+ iris %>% dplyr::arrange(dplyr::desc(!!rlang::sym(var1)),
+                            dplyr::desc(!!rlang::sym(var2)), 
+                            dplyr::desc(!!rlang::sym(var3)))
+```
+
+However, I suspect this might not solve your original problem. Please provide a reproducible example and we can help.
+
+
+# Reproducible example
+
+## Problem
+
+```{r}
+mydata <- iris
+skillz <- names(mydata)
+
+# Define UI for application
+ui <- fluidPage(
+
+# Application title
+titlePanel("Weighted App"),
+
+# Sidebar with little paragraph with inputs from person 
+sidebarLayout(
+ sidebarPanel(
+  selectInput("nothing", "Hi, I am trying to get my app to work. Here are ome options" = c("GED", "Bachelor's Degree", "Master's Degree", "PhD", "Trade School Certification", "Other"), selectize = FALSE),
+     selectInput("first", "I want to look at these 3 traits of irises 1:", choices = skillz, multiple = FALSE),
+     selectInput("second", "2:", choices = skillz, multiple = FALSE),
+     selectInput("third", "3:", choices = skillz, multiple = FALSE)
+  ),
+  # Show a table of the recommended occupations
+  mainPanel(
+     tableOutput("results")
+     #verbatimTextOutput('values')
+     #Professor:"Look at more examples on Shiny to see if you have an error. Think error in output here"
+
+      )
+   )
+)
+
+
+# Define server logic required to give weighted table
+server <- function(input, output) {
+
+       output$results <- reactive({
+      # generate table based on inputs from the above 3 options
+     filtered <- arrange(mydata, desc(mydata[,input$first]), desc(mydata[,input$second]), desc(mydata[,input$third])) 
+     filtered
+
+#If data table fails, maybe just print?   
+#  output$values <- reactivePrint(
+#   {
+ #   list(x1 = input$first, x2 = input$second, x3 = input$third) 
+  # } 
+ #)
+
+   })
+}
+
+# Run the application 
+shinyApp(ui = ui, server = server)
+```
+
+
+## Solution
+
+```{r}
+library(shiny)
+library(magrittr)
+
+ui <- fluidPage(
+  titlePanel("Weighted App"),
+# Sidebar with little paragraph with inputs from person 
+  sidebarLayout(
+    sidebarPanel(
+      selectInput("education", , label = "education", 
+          choices = c("GED", "Bachelor's Degree", "Master's Degree", 
+                      "PhD", "Trade School Certification", "Other"), 
+          selectize = FALSE),
+      selectInput("first", "I want to look at these 3 traits of irises 
+                 1:", choices = skillz, multiple = FALSE),
+      selectInput("second", "2:", choices = skillz, multiple = FALSE),
+      selectInput("third", "3:", choices = skillz, multiple = FALSE)
+), 
+# Show a table of the recommended occupations
+mainPanel(
+   tableOutput("results")
+  )
+ )
+)
+
+
+#Define server logic required to give weighted table
+server <- function(input, output) {
+
+  mydata <- iris
+  skillz <- names(mydata)
+
+  #Use renderTable instead of reactive
+   output$results <- renderTable({
+       # Arranging the rows according to the selected variables
+       filtered <- mydata %>% 
+            dplyr::arrange(dplyr::desc(!!rlang::sym(input$first)),
+                          dplyr::desc(!!rlang::sym(input$second)), 
+                          dplyr::desc(!!rlang::sym(input$third))) 
+       unselectedCols <-setdiff(colnames(filtered), 
+                                         unique(c(input$first,
+                                                 input$second,
+                                                 input$third)))
+
+       #Reordering columns according to the selections
+       filtered <- filtered %>% 
+                        dplyr::select(!!rlang::sym(input$first),
+                                      !!rlang::sym(input$second),
+                                      !!rlang::sym(input$third), 
+                                      !!unselectedCols)
+       filtered
+    })
+ }
+
+ #Run the application 
+ shinyApp(ui = ui, server = server)
+```
+
+* Using `sym` and `!!` operator on the variable containing the column name to pass to the arrange function
+* I've added an extra couple of lines of code which will reorder the data frame using `dplyr::select` so that the columns show in the order of selection. Variables are passed similarly using `!!` and `sym`
+* You can use `renderTable` directly to show a reactive table in the output, instead of using `reactive`. `renderTable` has a reactiv
