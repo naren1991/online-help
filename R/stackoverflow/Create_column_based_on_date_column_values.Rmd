@@ -1,0 +1,102 @@
+---
+title: "Create column based on datecolumn values in R"
+author: "Naren Srinivasan"
+date: "9 December 2018"
+output: html_document
+---
+# The problem
+
+\link{https://stackoverflow.com/questions/53689628/create-column-based-on-datecolumn-values-in-r}
+
+I wrote a function that creates column based on a datetime column using parameters starting and ending dates, but I can't get it to work.
+
+df is a data frame object.
+
+```{r eval = F}
+create_gv<-function(df, s_ymd, e_ymd, char) {
+  df<-get(df)
+  for (i in (1:nrow(df))) {
+  ymd <- format(df[i,1],"%y%m%d") 
+  if ((strptime(ymd,format = "%y%m%d") >= strptime(s_ymd,format = "%y%m%d") & strptime(ymd,format = "%y%m%d") <= strptime(e_ymd,format = "%y%m%d")) == TRUE) {
+    df$group_var[i]<-char
+  }
+  }
+}
+
+create_gv("example","171224","171224","D")
+```
+
+I get:
+
+`
+> example
+           start_time group_var
+1 2017-12-24 10:42:39        NA
+2 2017-12-24 10:44:31        NA
+3 2018-01-14 12:05:53        NA
+4 2018-01-14 12:22:12        NA
+`
+
+Reproducible data frame named example here:
+
+```{r eval = F}
+structure(list(start_time = structure(c(1514112159, 1514112271, 
+1515931553, 1515932532), class = c("POSIXct", "POSIXt"), tzone = ""), 
+    group_var = c(NA, NA, NA, NA)), .Names = c("start_time", 
+"group_var"), row.names = c(NA, -4L), class = "data.frame")
+```
+
+
+Wanted output:
+
+           start_time group_var
+1 2017-12-24 10:42:39         D
+2 2017-12-24 10:44:31         D
+3 2018-01-14 12:05:53         NA
+4 2018-01-14 12:22:12         NA
+
+# The solution
+```{r}
+
+df <- structure(list(start_time = structure(c(1514112159, 1514112271, 
+1515931553, 1515932532), class = c("POSIXct", "POSIXt"), tzone = ""), 
+    group_var = c(NA, NA, NA, NA)), .Names = c("start_time", 
+"group_var"), row.names = c(NA, -4L), class = "data.frame")
+df
+```
+
+From your description, my understanding is that you want to check if the date in a row  is between the start and end date (which are scalars), and update the value of `group_var` accordingly.
+
+The `lubridate` package provides a set of tools which allow to easily work with dates. In order to compare dates you don't need to format them. `format` only helps with the viewing of these dates. I have used to the `dplyr` package which allows you to easily perform data transformations.
+
+To solve the problem we use the `dplyr::mutate` function which transforms a column by row, as a function of other columns. In this case, tthe date column in our dataset is to compared with scalar start and end times in order to codify the `group_var` variable.
+
+```{r}
+library(lubridate)
+
+char <- "D"
+# Randomly setting the start and end times for the purpose of the example. Any value can be passed to this.
+s_ymd <- df$start_time[1] - 5000
+e_ymd <- df$start_time[2] + 5000
+
+
+df %>% dplyr::mutate(group_var = ifelse(start_time > s_ymd & start_time < e_ymd,
+                                        char, NA)) -> df
+df
+```
+
+To use a function write:
+
+```{r}
+create_gv <- function(start_time, s_ymd, e_ymd, char){
+  g_var <- ifelse(start_time > s_ymd & start_time < e_ymd,
+                                        char, NA)
+  return(g_var)
+}
+
+df %>% dplyr::mutate(group_var = create_gv(start_time, !!s_ymd, !!e_ymd, !!char)) 
+```
+
+sHere since s_ymd, e_ymd and char are scalars (i.e. not columns in the data frame), we need to unquote them
+
+Note - The `%>%` operator is used to make the code more readable by piping sequence of operations one after another, and comes from the `magrittr` package. This is of course not required
