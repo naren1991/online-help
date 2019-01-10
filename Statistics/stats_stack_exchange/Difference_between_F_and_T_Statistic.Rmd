@@ -1,0 +1,50 @@
+---
+title: "Difference between the *F* statistic and the *t*-statistic"
+author: "Naren Srinivasan"
+date: "9 December 2018"
+output: html_document
+---
+
+# The problem
+
+\link{https://stats.stackexchange.com/questions/381071/anova-f-statistic}
+
+In class, our professor brought up that as an alternative test of the hypothesis H0: B1 = 0, we use the F Statistic. My question is when do you know to use the F statistic vs just using t-statistic (T = (b1-0)/SE(b1)). Also, what does the F statistic tell you?
+
+# The solution
+
+The ANOVA F-Test can be thought of as a generalization of the t-test, though both statistics are defined differently. The ANOVA F-test can be used to evaluate difference in means between multiple groups, whereas the t-test can be used only for 2 groups at most.
+
+The t-test considers the difference in the sampling distributions of the *means* of the two groups, whereas the F-test looks at the variance within vs. between groups.
+
+The null hypothesis of a two sample test states that both the group means are equal. In the ANOVA F-test, that is extended to a null hypothesis of **all** the group means being equal, against an alternate of atleast one the group means not being the same. 
+
+However, the estimate of difference in means you would get from a t-test between 2 groups is *exactly* the same as what you would get by applying an ANOVA F-test on the same two groups. The following example on `iris` illustrates:
+
+```{r}
+data("iris")
+library(magrittr)
+iris_sub <- iris %>% dplyr::filter(Species %in% c("setosa", "virginica"))
+```
+
+```{r}
+anova_mod <- lm(Sepal.Length ~ Species, data = iris_sub)
+anova(anova_mod) -> ftest
+ftest
+summary(anova_mod)
+
+anova_test <- var.test(iris_sub %>% dplyr::filter(Species == "setosa") %>% dplyr::pull(Sepal.Length),
+         iris_sub %>% dplyr::filter(Species == "virginica") %>% dplyr::pull(Sepal.Length))
+anova_test$p.value
+```
+
+```{r}
+ttest <- t.test(Sepal.Length ~ Species, data = iris_sub)
+ttest$estimate[2] - ttest$estimate[1]
+ttest$estimate[1]
+ttest$p.value
+```
+
+As can be seen, the difference in means estimated 
+
+

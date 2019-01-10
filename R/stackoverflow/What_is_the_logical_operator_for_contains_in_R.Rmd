@@ -1,0 +1,38 @@
+---
+title: "How to arrange a data table by input column name in Shiny app?"
+author: "Naren Srinivasan"
+date: "27 November 2018"
+output: html_document
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# The problem
+
+\link{https://stackoverflow.com/questions/54122589/what-is-the-logical-operator-for-contains-in-r}
+ 
+I was working on RStudio with some data. I have sales data of a product month wise and the warranty expenses incurred for it monthly. Over the years, the months were entered in various nomenclatures making it hard for me to filter the data according to month. The data is as follows: Month Apr APR-13. APR-14. APR-15. Aug AUG-12. AUG-13. AUG-14. AUG-15. Dec DEC-12. DEC-13. DEC-14. DEC-15. Feb FEB-13. FEB-14. FEB-15. Jan JAN-07. JAN-13. JAN-14. JAN-15. Jul JUL-12. JUL-13. JUL-14. JUL-15. Jun JUN-12. JUN-13. JUN-14. JUN-15. Mar MAR-07. MAR-13. MAR-14. MAR-15. May MAY-13. MAY-14. MAY-15. Nov NOV-12. NOV-13. NOV-14. NOV-15. Oct OCT-12. OCT-13. OCT-14. Sep SEP-12. SEP-13. SEP-14. SEP-15.
+
+I wanted to subset the above data according to the months.
+
+I tried to use the subset function of the R. subset(SR,SR$Month=='Apr')
+
+The above code is giving only the results of the Month 'Apr' instead of giving the data of all months which contain Apr
+
+# The solution
+
+Note - Not answered on StackOverflow
+
+Pattern matching functions should do the trick. You can directly use the `grep` function or use `grepl` with the `subset` function. `grep`returns indices, while `grepl` returns a logical value. Here's some sample code:
+
+```{r}
+df <- data.frame(id = 1:7,
+                 Month = c("Apr", "APR-13", "APR-14", "APR-15", "Aug", "AUG-12", "AUG-13"))
+#grepl
+subset(df, grepl(pattern = "Apr", x = df$Month, ignore.case = T))
+
+#grep
+df[grepl(pattern = "Apr", x = df$Month, ignore.case = T),]
+```
+

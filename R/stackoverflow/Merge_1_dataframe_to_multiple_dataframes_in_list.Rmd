@@ -1,0 +1,32 @@
+---
+title: "Merge 1 dataframe to multiple dataframes in list"
+author: "Naren Srinivasan"
+date: "11 December 2018"
+output: html_document
+---
+
+# The problem
+
+I have a list of ten dataframes (DFList). I have one dataframe (DFMain) I want to merge to each of them (DFList) in an lapply function. They share the Column1, named Column1, which is the column I am merging by. It works for the first dataframe in the list, but ignores the rest of them. What am I missing? Thanks!
+
+```{r eval = F}
+mymerge<-function(x){
+    x<- merge(x, DFMain, by.x=c("Column1"), by.y=("Column1"), all.x=TRUE);
+};
+
+finishedmerge<-lapply(DFList, mymerge);
+```
+
+# The solution
+
+```{r}
+library(magrittr)
+DFMain <- iris %>% dplyr::mutate(id = 1:dplyr::n())
+DFList <- lapply(1:10, function(x, DFMain){
+  return(DFMain)
+}, DFMain)
+purrr::red
+
+lapply(DFList, function(df, DFMain ))
+```
+

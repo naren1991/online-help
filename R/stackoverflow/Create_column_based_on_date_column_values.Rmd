@@ -73,6 +73,7 @@ To solve the problem we use the `dplyr::mutate` function which transforms a colu
 
 ```{r}
 library(lubridate)
+library(magrittr)
 
 char <- "D"
 # Randomly setting the start and end times for the purpose of the example. Any value can be passed to this.
@@ -97,6 +98,6 @@ create_gv <- function(start_time, s_ymd, e_ymd, char){
 df %>% dplyr::mutate(group_var = create_gv(start_time, !!s_ymd, !!e_ymd, !!char)) 
 ```
 
-sHere since s_ymd, e_ymd and char are scalars (i.e. not columns in the data frame), we need to unquote them
+Here since s_ymd, e_ymd and char are scalars (i.e. not columns in the data frame), we need to unquote them
 
 Note - The `%>%` operator is used to make the code more readable by piping sequence of operations one after another, and comes from the `magrittr` package. This is of course not required
